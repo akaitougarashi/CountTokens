@@ -5,13 +5,13 @@
 
   let totalTokens = 0;
   let chart = null;
-  const tokenHistory = [];
-  const labels = [];
+  let tokenHistory = [];
+  let labels = [];
 
   const resetBtn = document.getElementById("resetBtn");
-  // const inputText = document.getElementById('inputText'); // Removed
   const lastCountSpan = document.getElementById("lastCount");
   const totalCountSpan = document.getElementById("totalCount");
+  const liveStatus = document.getElementById("liveStatus");
 
   // Initialize Chart
   const ctx = document.getElementById("tokenChart").getContext("2d");
@@ -58,72 +58,66 @@
 
   // Handle messages sent from the extension to the webview
   window.addEventListener("message", (event) => {
-    const message = event.data; // The json data that the extension sent
+    const message = event.data;
     switch (message.type) {
-      case "token-result":
-      case "token-update-auto": {
-        const isAuto = message.type === "token-update-auto";
-        const tokens = message.value;
-        const delta = message.delta || 0; // Receive delta
-        const timestamp = new Date(message.timestamp).toLocaleTimeString();
-
-        // Update UI
-        if (isAuto) {
-          // Show delta for Last Count
-          lastCountSpan.innerText = (delta >= 0 ? "+" : "") + delta;
-        } else {
-          lastCountSpan.innerText = tokens;
-        }
-        totalTokens += tokens; // Should we accumulate or replace?
-        // If it's a log update, it might be cumulative or new messages?
-        // The log file reading reads the *whole* file or newly added part?
-        // LogMonitor.ts reads the whole file (or checks diff).
-        // LogMonitor.ts extracts text from *entire* file currently.
-        // So the token count is for the *entire* conversation.
-
-        // Use case correction:
-        // If LogMonitor passes the *entire* text of conversation, then 'tokens' is the total count.
-        // The chart tracks *history* of counts.
-        // If we get "100 tokens", then "120 tokens", then "150 tokens" (growing conversation).
-        // We probably want to plot the total size over time.
-
-        if (isAuto) {
-          document.getElementById("liveStatus").style.display = "inline";
-          totalCountSpan.innerText = tokens;
-
-          if (tokens === 0) {
-            // Reset Chart
-            labels.length = 0;
-            tokenHistory.length = 0;
-            totalTokens = 0;
-            if (chart) {
-              chart.update();
-            }
-            lastCountSpan.innerText = "0";
-            return;
-          }
-        } else {
-          // Manual calc
-          totalTokens += tokens; // Accumulate manually checked chunks
-          totalCountSpan.innerText = totalTokens;
+      case "init-state": {
+        // Restore state from backend
+        totalTokens = message.sessionTotal || 0;
+        tokenHistory.length = 0;
+        labels.length = 0;
+        
+        if (message.tokenHistory && message.labels) {
+          message.tokenHistory.forEach((v) => tokenHistory.push(v));
+          message.labels.forEach((l) => labels.push(l));
         }
 
-        // Update Chart
+        totalCountSpan.innerText = totalTokens;
+        lastCountSpan.innerText = (message.lastDelta >= 0 ? "+" : "") + (message.lastDelta || 0);
+        
+        if (totalTokens > 0) {
+          liveStatus.style.display = "inline";
+        }
+
         if (chart) {
-          labels.push(timestamp);
-          tokenHistory.push(tokens);
-
-          // Limit history to last 20 points
-          if (labels.length > 20) {
-            labels.shift();
-            tokenHistory.shift();
-          }
-
           chart.update();
         }
+        break;
+      }
+      case "state-reset": {
+        // Clear everything
+        totalTokens = 0;
+        tokenHistory.length = 0;
+        labels.length = 0;
+        totalCountSpan.innerText = "0";
+        lastCountSpan.innerText = "0";
+        if (chart) {
+          chart.update();
+        }
+        break;
+      }
+      case "token-update-auto": {
+        const tokens = message.value;
+        const delta = message.delta || 0;
+        const timestamp = message.timestamp;
 
-        if (!isAuto) {
-          inputText.value = ""; // Clear input only for manual
+        // Update UI
+        lastCountSpan.innerText = (delta >= 0 ? "+" : "") + delta;
+        totalTokens = tokens;
+        totalCountSpan.innerText = tokens;
+        liveStatus.style.display = "inline";
+
+        // Update Chart data (backend already manages history, but we sync here)
+        labels.push(timestamp);
+        tokenHistory.push(tokens);
+
+        // Limit history to last 20 points
+        if (labels.length > 20) {
+          labels.shift();
+          tokenHistory.shift();
+        }
+
+        if (chart) {
+          chart.update();
         }
         break;
       }
@@ -133,4 +127,8 @@
       }
     }
   });
+
+  // Notify backend that webview is ready
+  vscode.postMessage({ type: "webview-ready" });
 })();
+

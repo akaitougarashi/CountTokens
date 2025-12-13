@@ -5,6 +5,14 @@ export class TokenSidebarProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "token-sidebar";
   private _view?: vscode.WebviewView;
 
+  // Persisted state (survives webview hide/show)
+  private _sessionTotal: number = 0;
+  private _lastFilePath: string | null = null;
+  private _lastFileTokens: number = 0;
+  private _tokenHistory: number[] = [];
+  private _labels: string[] = [];
+  private _lastDelta: number = 0;
+
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
   public resolveWebviewView(
@@ -37,13 +45,25 @@ export class TokenSidebarProvider implements vscode.WebviewViewProvider {
           vscode.window.showErrorMessage(data.value);
           break;
         }
+        case "webview-ready": {
+          // Webview is ready, send current state
+          this._view?.webview.postMessage({
+            type: "init-state",
+            sessionTotal: this._sessionTotal,
+            tokenHistory: this._tokenHistory,
+            labels: this._labels,
+            lastDelta: this._lastDelta
+          });
+          break;
+        }
         case "reset-session": {
             this._sessionTotal = 0;
+            this._tokenHistory = [];
+            this._labels = [];
+            this._lastDelta = 0;
             if (this._view) {
                 this._view.webview.postMessage({
-                    type: "token-update-auto",
-                    value: 0,
-                    timestamp: new Date().toISOString()
+                    type: "state-reset"
                 });
             }
             break;
@@ -74,21 +94,15 @@ export class TokenSidebarProvider implements vscode.WebviewViewProvider {
     }
   }
 
-  private _sessionTotal: number = 0;
-  private _lastFilePath: string | null = null;
-  private _lastFileTokens: number = 0;
+  // Note: State members moved to top of class for persistence
 
   public updateTokenCount(filePath: string, text: string) {
-    if (!this._view) {
-        return;
-    }
     try {
         const enc = getEncoding("cl100k_base");
         const currentTokens = enc.encode(text).length;
         // enc.free();
 
         // Accumulation Logic
-        let displayTokens = this._sessionTotal;
         let delta = 0;
 
         if (this._lastFilePath !== filePath) {
@@ -107,14 +121,27 @@ export class TokenSidebarProvider implements vscode.WebviewViewProvider {
             this._lastFileTokens = currentTokens;
         }
 
-        // displayTokens = this._sessionTotal; // No longer just sending total
+        // Store history in backend
+        const timestamp = new Date().toLocaleTimeString();
+        this._tokenHistory.push(this._sessionTotal);
+        this._labels.push(timestamp);
+        this._lastDelta = delta;
 
-        this._view.webview.postMessage({
-            type: "token-update-auto",
-            value: this._sessionTotal,
-            delta: delta, // Send the delta as well
-            timestamp: new Date().toISOString()
-        });
+        // Limit history to last 20 points
+        if (this._tokenHistory.length > 20) {
+            this._tokenHistory.shift();
+            this._labels.shift();
+        }
+
+        // Only send to webview if it exists
+        if (this._view) {
+            this._view.webview.postMessage({
+                type: "token-update-auto",
+                value: this._sessionTotal,
+                delta: delta,
+                timestamp: timestamp
+            });
+        }
     } catch (err) {
         console.error(err);
     }

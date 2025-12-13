@@ -32,3 +32,35 @@ Search for "Antigravity Token Visualizer" and install.
 ## License
 
 MIT
+
+---
+
+## How Token Counting Works
+
+This extension estimates token usage by parsing Antigravity's conversation logs (`.pb` files). The displayed count includes:
+
+| Component | Description |
+|-----------|-------------|
+| **System Prompt** | Instructions that tell the AI how to behave (~tens of thousands of tokens) |
+| **Conversation History** | All previous messages in the current session |
+| **Tool Definitions** | Specifications for available tools (file editing, search, etc.) |
+| **Your Messages** | The actual text you type |
+| **AI Responses** | Antigravity's replies |
+
+### Important Notes
+
+- **System tokens are included**: A large portion of token consumption comes from the system prompt, not your messages. This is normal.
+- **This is an estimate**: The `.pb` files are binary Protocol Buffers without a public schema, so extraction is heuristic-based. The absolute count may not be exact, but the **trend** is accurate.
+- **Useful for monitoring**: Watch for sudden spikes when reading large files or when conversations get long.
+
+### When Does It Reset?
+
+| Event | Behavior |
+|-------|----------|
+| **Reset button pressed** | Clears session total and graph |
+| **Switching sidebar tabs** | State is **preserved** (returns when you come back) |
+| **Sidebar never opened** | Tokens are still tracked in the background ✓ |
+| **Antigravity restarts** | Session resets (extension reloads) |
+| **New conversation started** | Tracked as continuation (no auto-reset) |
+
+> **Tip**: Press the Reset button when starting a new task to track token consumption for that specific work session.

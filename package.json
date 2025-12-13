@@ -6,7 +6,7 @@
   "icon": "media/icon.svg",
   "repository": {
     "type": "git",
-    "url": "https://github.com/アカイトウガラシ/CountTokens.git"
+    "url": "https://github.com/akaitougarashi/CountTokens.git"
   },
   "engines": {
     "vscode": "^1.80.0"

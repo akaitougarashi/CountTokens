@@ -57,16 +57,16 @@ export class TokenSidebarProvider implements vscode.WebviewViewProvider {
           break;
         }
         case "reset-session": {
-            this._sessionTotal = 0;
-            this._tokenHistory = [];
-            this._labels = [];
-            this._lastDelta = 0;
-            if (this._view) {
-                this._view.webview.postMessage({
-                    type: "state-reset"
-                });
-            }
-            break;
+          this._sessionTotal = 0;
+          this._tokenHistory = [];
+          this._labels = [];
+          this._lastDelta = 0;
+          if (this._view) {
+            this._view.webview.postMessage({
+              type: "state-reset",
+            });
+          }
+          break;
         }
       }
     });
@@ -80,16 +80,16 @@ export class TokenSidebarProvider implements vscode.WebviewViewProvider {
       const enc = getEncoding("cl100k_base");
       const tokens = enc.encode(text).length;
       // enc.free(); // js-tiktoken does not need free()
-      
+
       this._view.webview.postMessage({
         type: "token-result",
         value: tokens,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } catch (err) {
       this._view.webview.postMessage({
         type: "error",
-        value: "Token calculation failed"
+        value: "Token calculation failed",
       });
     }
   }
@@ -98,52 +98,51 @@ export class TokenSidebarProvider implements vscode.WebviewViewProvider {
 
   public updateTokenCount(filePath: string, text: string) {
     try {
-        const enc = getEncoding("cl100k_base");
-        const currentTokens = enc.encode(text).length;
-        // enc.free();
+      const enc = getEncoding("cl100k_base");
+      const currentTokens = enc.encode(text).length;
 
-        // Accumulation Logic
-        let delta = 0;
+      // Accumulation Logic
+      let delta = 0;
 
-        if (this._lastFilePath !== filePath) {
-            // Context switched or first run
-            // We treat the current state of this new file as the baseline.
-            // We don't add to session total yet.
-            this._lastFilePath = filePath;
-            this._lastFileTokens = currentTokens;
-        } else {
-            // Same file, check delta
-            delta = currentTokens - this._lastFileTokens;
-            if (delta > 0) {
-                this._sessionTotal += delta;
-            }
-            // Update baseline
-            this._lastFileTokens = currentTokens;
+      if (this._lastFilePath !== filePath) {
+        // Context switched or first run
+        // We treat the current state of this new file as the baseline.
+        // We don't add to session total yet.
+        this._lastFilePath = filePath;
+        this._lastFileTokens = currentTokens;
+      } else {
+        // Same file, check delta
+        delta = currentTokens - this._lastFileTokens;
+        if (delta > 0) {
+          this._sessionTotal += delta;
         }
+        // Update baseline
+        this._lastFileTokens = currentTokens;
+      }
 
-        // Store history in backend
-        const timestamp = new Date().toLocaleTimeString();
-        this._tokenHistory.push(this._sessionTotal);
-        this._labels.push(timestamp);
-        this._lastDelta = delta;
+      // Store history in backend
+      const timestamp = new Date().toLocaleTimeString();
+      this._tokenHistory.push(this._sessionTotal);
+      this._labels.push(timestamp);
+      this._lastDelta = delta;
 
-        // Limit history to last 20 points
-        if (this._tokenHistory.length > 20) {
-            this._tokenHistory.shift();
-            this._labels.shift();
-        }
+      // Limit history to last 20 points
+      if (this._tokenHistory.length > 20) {
+        this._tokenHistory.shift();
+        this._labels.shift();
+      }
 
-        // Only send to webview if it exists
-        if (this._view) {
-            this._view.webview.postMessage({
-                type: "token-update-auto",
-                value: this._sessionTotal,
-                delta: delta,
-                timestamp: timestamp
-            });
-        }
+      // Only send to webview if it exists
+      if (this._view) {
+        this._view.webview.postMessage({
+          type: "token-update-auto",
+          value: this._sessionTotal,
+          delta: delta,
+          timestamp: timestamp,
+        });
+      }
     } catch (err) {
-        console.error(err);
+      console.error(err);
     }
   }
 
@@ -163,7 +162,7 @@ export class TokenSidebarProvider implements vscode.WebviewViewProvider {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "media", "main.js")
     );
-    
+
     // Using a CDN for Chart.js for simplicity in this MVP.
     // In a production specific environment, we should bundle it.
     // However, since extensions might be offline, I will eventually download it.

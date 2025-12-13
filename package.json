@@ -15,6 +15,15 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "antigravity",
+    "token",
+    "usage",
+    "visualization",
+    "gemini",
+    "ai",
+    "google"
+  ],
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {

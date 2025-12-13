@@ -1,9 +1,10 @@
 {
   "name": "antigravity-token-viz",
+  "publisher": "Akaitougarashi",
   "displayName": "Antigravity Token Visualizer",
   "description": "Visualizes token consumption for Antigravity conversations",
   "version": "0.0.1",
-  "icon": "media/icon.svg",
+  "icon": "media/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/akaitougarashi/CountTokens.git"

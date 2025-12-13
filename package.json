@@ -3,7 +3,7 @@
   "publisher": "Akaitougarashi",
   "displayName": "Antigravity Token Visualizer",
   "description": "Visualizes token consumption for Antigravity conversations",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "icon": "media/icon.png",
   "repository": {
     "type": "git",
@@ -24,7 +24,7 @@
     "ai",
     "google"
   ],
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished"],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {

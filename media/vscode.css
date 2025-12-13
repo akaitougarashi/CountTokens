@@ -1,0 +1,54 @@
+body {
+  background-color: transparent;
+  color: var(--vscode-editor-foreground);
+  font-family: var(--vscode-font-family);
+  padding: 10px;
+}
+
+button {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  /* width: 100%; Removed global full width */
+  margin-top: 10px;
+}
+
+#resetBtn {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  font-size: 0.85em;
+  padding: 4px 12px;
+  border-radius: 2px;
+  width: auto;
+  /* float: right; Handled by flex parent */
+  margin-top: 0;
+}
+
+#resetBtn:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+textarea {
+  width: 100%;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  padding: 5px;
+  font-family: var(--vscode-editor-font-family);
+}
+
+.stats {
+  margin-top: 20px;
+  padding-top: 10px;
+  border-top: 1px solid var(--vscode-widget-border);
+}
+
+.stats p {
+  margin-bottom: 5px;
+}

@@ -41,7 +41,20 @@
         },
         scales: {
           y: {
-            beginAtZero: true,
+            beginAtZero: false,
+            min: function(context) {
+              const data = context.chart.data.datasets[0].data;
+              if (!data || data.length === 0) return 0;
+              const minValue = Math.min(...data);
+              const maxValue = Math.max(...data);
+              const range = maxValue - minValue;
+              // If range is less than 10% of max, or values are small, start from 0
+              if (range < maxValue * 0.1 || minValue < 10000) {
+                return 0;
+              }
+              // Otherwise, start from 90% of min value (rounded down)
+              return Math.floor(minValue * 0.9);
+            },
           },
         },
       },
@@ -65,15 +78,16 @@
         totalTokens = message.sessionTotal || 0;
         tokenHistory.length = 0;
         labels.length = 0;
-        
+
         if (message.tokenHistory && message.labels) {
           message.tokenHistory.forEach((v) => tokenHistory.push(v));
           message.labels.forEach((l) => labels.push(l));
         }
 
         totalCountSpan.innerText = totalTokens;
-        lastCountSpan.innerText = (message.lastDelta >= 0 ? "+" : "") + (message.lastDelta || 0);
-        
+        lastCountSpan.innerText =
+          (message.lastDelta >= 0 ? "+" : "") + (message.lastDelta || 0);
+
         if (totalTokens > 0) {
           liveStatus.style.display = "inline";
         }
@@ -131,4 +145,3 @@
   // Notify backend that webview is ready
   vscode.postMessage({ type: "webview-ready" });
 })();
-
